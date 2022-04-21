@@ -1,0 +1,2 @@
+# cson
+cson = convenient json
