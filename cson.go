@@ -186,6 +186,24 @@ func (json *JSON) Bool() bool {
 	}
 }
 
+func (json *JSON) Slice() []*JSON {
+	res := make([]*JSON, 0)
+	if json.val == nil {
+		return res
+	}
+	var val any
+	switch v := json.val.(type) {
+	case JSON:
+		val = v.Val()
+	default:
+		val = v
+	}
+	slice := cast.ToSlice(val)
+	for _, item := range slice {
+		res = append(res, NewJSON(item))
+	}
+	return res
+}
 func (json *JSON) Eq(a any) bool {
 	if json.locker != nil {
 		json.locker.RLock()
