@@ -175,6 +175,10 @@ func (json *JSON) Int64() int64 {
 }
 
 func (json *JSON) Bool() bool {
+	if json.locker != nil {
+		json.locker.RLock()
+		defer json.locker.RUnlock()
+	}
 	if json.val == nil {
 		return false
 	}
@@ -187,6 +191,10 @@ func (json *JSON) Bool() bool {
 }
 
 func (json *JSON) Slice() []*JSON {
+	if json.locker != nil {
+		json.locker.RLock()
+		defer json.locker.RUnlock()
+	}
 	res := make([]*JSON, 0)
 	if json.val == nil {
 		return res
@@ -212,13 +220,13 @@ func (json *JSON) Eq(a any) bool {
 	return reflect.DeepEqual(json.val, a)
 }
 
-func (json *JSON) MarshalSON() ([]byte, error) {
+func (json JSON) MarshalJSON() ([]byte, error) {
 	if json.locker != nil {
 		json.locker.RLock()
 		defer json.locker.RUnlock()
 	}
 
-	res, err := jsonlib.Marshal(json.val)
+	res, err := jsonlib.Marshal(json.Val())
 	return res, err
 }
 
