@@ -53,7 +53,12 @@ func (json *JSON) Get(path string) *JSON {
 		defer json.locker.RUnlock()
 	}
 
+	if len(path) == 0 {
+		return json
+	}
+
 	curr := json.val
+
 	components := strings.Split(path, ".")
 	for _, i := range components {
 		switch t := curr.(type) {
