@@ -157,11 +157,9 @@ func (json *JSON) String() string {
 	if json.IsNil() {
 		return ""
 	}
-	switch v := json.val.(type) {
+	switch v := json.Val().(type) {
 	case string:
 		return v
-	case JSON:
-		return v.String()
 	default:
 		return fmt.Sprintf("%v", v)
 	}
@@ -178,12 +176,7 @@ func (json *JSON) Float64() float64 {
 	if json.IsNil() {
 		return 0
 	}
-	switch v := json.val.(type) {
-	case JSON:
-		return v.Float64()
-	default:
-		return cast.ToFloat64(v)
-	}
+	return cast.ToFloat64(json.Val())
 }
 
 func (json *JSON) Int64() int64 {
@@ -194,12 +187,17 @@ func (json *JSON) Int64() int64 {
 	if json.IsNil() {
 		return 0
 	}
-	switch v := json.val.(type) {
-	case JSON:
-		return v.Int64()
-	default:
-		return cast.ToInt64(v)
+	return cast.ToInt64(json.Val())
+}
+func (json *JSON) Int() int {
+	if json.locker != nil {
+		json.locker.RLock()
+		defer json.locker.RUnlock()
 	}
+	if json.IsNil() {
+		return 0
+	}
+	return cast.ToInt(json.Val())
 }
 
 func (json *JSON) Bool() bool {
@@ -210,12 +208,7 @@ func (json *JSON) Bool() bool {
 	if json.IsNil() {
 		return false
 	}
-	switch v := json.val.(type) {
-	case JSON:
-		return v.Bool()
-	default:
-		return cast.ToBool(v)
-	}
+	return cast.ToBool(json.Val())
 }
 
 func (json *JSON) Slice() []*JSON {
@@ -227,8 +220,7 @@ func (json *JSON) Slice() []*JSON {
 	if json.IsNil() {
 		return res
 	}
-	val := json.Val()
-	slice := cast.ToSlice(val)
+	slice := cast.ToSlice(json.Val())
 	for _, item := range slice {
 		res = append(res, NewJSON(item))
 	}
