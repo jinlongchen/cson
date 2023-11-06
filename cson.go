@@ -93,6 +93,10 @@ func (json *JSON) Set(path string, v any) *JSON {
 		defer json.locker.Unlock()
 	}
 
+	if json == v {
+		panic("")
+	}
+
 	if path == "" {
 		json.val = v
 		return json

@@ -32,4 +32,18 @@ func TestJSON_Set(t *testing.T) {
 			t.Fatal(testCase)
 		}
 	}
+
+	{
+		defer func() {
+			if r := recover(); r != nil {
+				println("OK")
+			} else {
+				t.Fatal()
+			}
+		}()
+
+		json := NewJSON(3)
+		json.Set("", json.Get(""))
+		println(json.IsNil())
+	}
 }
