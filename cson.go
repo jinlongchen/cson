@@ -30,7 +30,17 @@ func (json *JSON) Safe() *JSON {
 }
 
 func (json *JSON) IsNil() bool {
-	return json == nil || json.Val() == nil
+	if json == nil || json.val == nil {
+		return true
+	}
+	switch v := json.val.(type) {
+	case JSON:
+		return v.IsNil()
+	case *JSON:
+		return v.IsNil()
+	default:
+		return false
+	}
 }
 
 func (json *JSON) Get(path string) *JSON {
