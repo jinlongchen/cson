@@ -30,11 +30,11 @@ func (json *JSON) Safe() *JSON {
 }
 
 func (json *JSON) IsNil() bool {
-	return json == nil || json.val == nil
+	return json == nil || json.Val() == nil
 }
 
 func (json *JSON) Get(path string) *JSON {
-	if json.val == nil {
+	if json.IsNil() {
 		return &JSON{}
 	}
 
@@ -46,18 +46,30 @@ func (json *JSON) Get(path string) *JSON {
 	curr := json.val
 	components := strings.Split(path, ".")
 	for _, i := range components {
-		if m, ok := curr.(map[string]any); ok {
-			if v, ok := m[i]; ok {
+		switch t := curr.(type) {
+		case *JSON:
+			curr = t.Get(i)
+		case JSON:
+			curr = t.Get(i)
+		case map[string]any:
+			if v, ok := t[i]; ok {
 				curr = v
 			} else {
 				return &JSON{}
 			}
-		} else {
+		default:
 			return &JSON{}
 		}
 	}
 
-	return &JSON{val: curr, locker: json.locker}
+	switch curr := curr.(type) {
+	case *JSON:
+		return curr
+	case JSON:
+		return &curr
+	default:
+		return &JSON{val: curr, locker: json.locker}
+	}
 }
 
 func (json *JSON) Set(path string, v any) *JSON {
@@ -71,18 +83,22 @@ func (json *JSON) Set(path string, v any) *JSON {
 		return json
 	}
 
-	if json.val == nil {
-		json.val = make(map[string]any)
-	}
-
-	switch json.val.(type) {
-	case map[string]any:
-	default:
-		json.val = make(map[string]any)
-	}
-
 	keys := strings.Split(path, ".")
-	curr := json.val.(map[string]any)
+	var curr map[string]any
+
+	if json.IsNil() {
+		curr = make(map[string]any)
+		json.val = curr
+	} else {
+		switch v := json.val.(type) {
+		case map[string]any:
+			curr = v
+		default:
+			curr = make(map[string]any)
+			json.val = curr
+		}
+	}
+
 	for i := 0; i < len(keys)-1; i++ {
 		key := keys[i]
 		next := curr[key]
@@ -105,11 +121,13 @@ func (json *JSON) Value() any {
 		defer json.locker.RUnlock()
 	}
 
-	if json.val == nil {
+	if json.IsNil() {
 		return nil
 	}
 	switch v := json.val.(type) {
 	case JSON:
+		return v.Value()
+	case *JSON:
 		return v.Value()
 	default:
 		return v
@@ -126,7 +144,7 @@ func (json *JSON) String() string {
 		defer json.locker.RUnlock()
 	}
 
-	if json.val == nil {
+	if json.IsNil() {
 		return ""
 	}
 	switch v := json.val.(type) {
@@ -147,7 +165,7 @@ func (json *JSON) Float64() float64 {
 		json.locker.RLock()
 		defer json.locker.RUnlock()
 	}
-	if json.val == nil {
+	if json.IsNil() {
 		return 0
 	}
 	switch v := json.val.(type) {
@@ -163,7 +181,7 @@ func (json *JSON) Int64() int64 {
 		json.locker.RLock()
 		defer json.locker.RUnlock()
 	}
-	if json.val == nil {
+	if json.IsNil() {
 		return 0
 	}
 	switch v := json.val.(type) {
@@ -179,7 +197,7 @@ func (json *JSON) Bool() bool {
 		json.locker.RLock()
 		defer json.locker.RUnlock()
 	}
-	if json.val == nil {
+	if json.IsNil() {
 		return false
 	}
 	switch v := json.val.(type) {
@@ -196,16 +214,10 @@ func (json *JSON) Slice() []*JSON {
 		defer json.locker.RUnlock()
 	}
 	res := make([]*JSON, 0)
-	if json.val == nil {
+	if json.IsNil() {
 		return res
 	}
-	var val any
-	switch v := json.val.(type) {
-	case JSON:
-		val = v.Val()
-	default:
-		val = v
-	}
+	val := json.Val()
 	slice := cast.ToSlice(val)
 	for _, item := range slice {
 		res = append(res, NewJSON(item))
