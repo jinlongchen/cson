@@ -66,6 +66,16 @@ func (json *JSON) Get(path string) *JSON {
 			curr = t.Get(i)
 		case JSON:
 			curr = t.Get(i)
+		case any:
+			if m, ok := t.(map[string]any); ok {
+				if v, ok := m[i]; ok {
+					curr = v
+				} else {
+					return &JSON{}
+				}
+			} else {
+				return &JSON{}
+			}
 		case map[string]any:
 			if v, ok := t[i]; ok {
 				curr = v
