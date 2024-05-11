@@ -67,7 +67,10 @@ func (json *JSON) Get(path string) *JSON {
 		case JSON:
 			curr = t.Get(i)
 		case any:
-			if m, ok := t.(map[string]any); ok {
+			if tmp, ok := t.(*interface{}); ok {
+				t = *tmp
+			}
+			if m, ok := t.(map[string]interface{}); ok {
 				if v, ok := m[i]; ok {
 					curr = v
 				} else {
